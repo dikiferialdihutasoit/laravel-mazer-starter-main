@@ -28,7 +28,7 @@
             <div class="accordion-item">
                 <h2 class="accordion-header" id="headingKategori1">
                     <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseKategori1" aria-expanded="true" aria-controls="collapseKategori1">
-                        Kategori A: Penilaian Kinerja Tim (4 Formulir)
+                        Kategori A: nilaian Kinerja Tim (4 Formulir)
                     </button>
                 </h2>
                 <div id="collapseKategori1" class="accordion-collapse collapse show" aria-labelledby="headingKategori1" data-bs-parent="#accordionKategori">
@@ -39,7 +39,7 @@
                         {{-- FORM 1 (di dalam kategori) --}}
                         <div class="card form-penilaian-card mb-3">
                             <div class="card-header">
-                                <h4 class="card-title">1. Pembangunan dan Pemeliharaan Komitmen Tim</h4>
+                                <h4 class="card-title">1. Pembangunan Pemeliharaan Komitmen Tim</h4>
                             </div>
                             <div class="card-body">
                                 {{-- Isi form 1... --}}
