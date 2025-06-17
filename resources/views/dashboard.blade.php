@@ -2,34 +2,75 @@
     <x-slot:title>
         Dashboard
     </x-slot>
+
     <div class="page-heading">
-        <div class="page-title">
-            <div class="row">
-                <div class="col-12 col-md-6 order-md-1 order-last">
-                    <h3>Layout Default</h3>
-                    <p class="text-subtitle text-muted">The default layout.</p>
-                </div>
-                <div class="col-12 col-md-6 order-md-2 order-first">
-                    <nav aria-label="breadcrumb" class="breadcrumb-header float-start float-lg-end">
-                        <ol class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="index.html">Dashboard</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Layout Default</li>
-                        </ol>
-                    </nav>
-                </div>
-            </div>
-        </div>
-        <section class="section">
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="card-title">Default Layout</h4>
-                </div>
-                <div class="card-body">
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Magnam, commodi? Ullam quaerat similique iusto
-                    temporibus, vero aliquam praesentium, odit deserunt eaque nihil saepe hic deleniti? Placeat delectus
-                    quibusdam ratione ullam!
+        <h3>Dashboard Rekapitulasi</h3>
+    </div>
+    <div class="page-content">
+        <section class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title">Rekapitulasi Total Skor Survei per Bulan</h4>
+                    </div>
+                    <div class="card-body">
+                        {{-- Ini adalah "kanvas" tempat grafik akan digambar --}}
+                        <canvas id="surveyChart"></canvas>
+                    </div>
                 </div>
             </div>
         </section>
     </div>
+
+    {{-- 'scripts' ini akan di-push ke @stack('scripts') di layout utama --}}
+    @push('scripts')
+    <script>
+        // Pastikan script berjalan setelah semua elemen halaman dimuat
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            // Ambil elemen canvas
+            const ctx = document.getElementById('surveyChart').getContext('2d');
+            let myChart; // Deklarasikan variabel chart di luar agar bisa diakses
+
+            // Fungsi untuk mengambil data dari API dan merender grafik
+            function renderChart() {
+                // Ambil data dari route API yang sudah kita buat
+                fetch("{{ route('chart.data') }}")
+                    .then(response => response.json())
+                    .then(data => {
+                        // Hancurkan chart lama jika ada, untuk mencegah duplikasi
+                        if (myChart) {
+                            myChart.destroy();
+                        }
+                        
+                        // Buat instansi grafik baru
+                        myChart = new Chart(ctx, {
+                            type: 'bar', // Tipe grafik batang
+                            data: {
+                                labels: data.labels, // Label sumbu X (nama bulan) dari controller
+                                datasets: [{
+                                    label: 'Total Skor per Bulan',
+                                    data: data.data, // Data sumbu Y (total skor) dari controller
+                                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                    borderColor: 'rgba(75, 192, 192, 1)',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                scales: {
+                                    y: {
+                                        beginAtZero: true
+                                    }
+                                }
+                            }
+                        });
+                    })
+                    .catch(error => console.error('Error fetching chart data:', error));
+            }
+
+            // Panggil fungsi untuk pertama kali saat halaman dimuat
+            renderChart();
+        });
+    </script>
+    @endpush
 </x-app-layout>

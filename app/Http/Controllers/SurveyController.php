@@ -18,24 +18,39 @@ class SurveyController extends Controller
     /**
      * Menampilkan semua hasil survei yang sudah disimpan.
      */
-    public function showResults()
-    {
-        // Ambil semua data dari tabel 'survey_results'
-        // diurutkan dari yang paling baru.
-        $results = SurveyResult::orderBy('created_at', 'desc')->get();
+// app/Http/Controllers/SurveyController.php
 
-        // Kirim data tersebut ke view 'survey.results'
-        return view('survey.results', ['results' => $results]);
+// app/Http/Controllers/SurveyController.php
+
+// app/Http/Controllers/SurveyController.php
+
+public function showResults()
+{
+    // 1. Ambil semua data dari database
+    $allResults = SurveyResult::orderBy('created_at', 'desc')->get();
+
+    // 2. Hitung Grand Total dari semua data yang diambil
+    $grandTotal = 0;
+    foreach ($allResults as $result) {
+        // array_sum akan menjumlahkan semua angka di dalam array 'scores'
+        $grandTotal += array_sum($result->scores);
     }
 
-    /**
-     * Menyimpan data dari SATU KATEGORI (beberapa form sekaligus).
-     */
+    // 3. Kelompokkan hasil berdasarkan tanggal untuk tampilan accordion
+    $groupedResults = $allResults->groupBy(function($item) {
+        return $item->created_at->format('d F Y');
+    });
+
+    // 4. Kirim SEMUA data yang dibutuhkan (groupedResults DAN grandTotal) ke view
+    return view('survey.results', [
+        'groupedResults' => $groupedResults,
+        'grandTotal' => $grandTotal
+    ]);
+}
     public function storeCategory(Request $request)
     {
         // 1. Validasi data yang masuk
         $request->validate([
-            'category_id' => 'required|string',
             'results' => 'required|array'
         ]);
 
@@ -63,7 +78,7 @@ class SurveyController extends Controller
         }
 
         // 4. Redirect kembali dengan pesan sukses
-        return back()->with('success', 'Data untuk Kategori ' . $request->input('category_id') . ' berhasil disimpan!');
+        return back()->with('success', 'Semua data survei berhasil disimpan!');
     }
 
     /**

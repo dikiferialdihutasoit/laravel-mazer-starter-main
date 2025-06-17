@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SurveyController;
+use App\Http\Controllers\DashboardController; // <-- PENYESUAIAN 1
 
 /*
 |--------------------------------------------------------------------------
@@ -14,20 +15,17 @@ Route::get('/', function () {
 });
 
 Route::group(['middleware' => 'auth'], function() {
-    Route::get('dashboard', function() {
-        return view('dashboard');
-    })->name('dashboard');
+    
+    // PENYESUAIAN 2: Arahkan rute dashboard ke controller
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // --- RUTE UNTUK FITUR SURVEI ---
-    // Rute untuk menampilkan halaman form
+    // Rute untuk fitur survei 
     Route::get('survey/form', [SurveyController::class, 'index'])->name('survey.form');
-    // Rute untuk menyimpan data per kategori
+    Route::get('survey/results', [SurveyController::class, 'showResults'])->name('survey.results');
     Route::post('survey/category/store', [SurveyController::class, 'storeCategory'])->name('survey.store.category');
     
-    // >> LETAKKAN RUTE BARU ANDA DI SINI <<
-    // Rute untuk menampilkan halaman hasil survei
-    Route::get('survey/results', [SurveyController::class, 'showResults'])->name('survey.results');
-    
+    // Rute API untuk data grafik
+    Route::get('api/chart-data', [DashboardController::class, 'getChartData'])->name('chart.data');
 
     // Grup untuk rute komponen contoh dari template
     Route::group(['prefix' => 'component', 'as' => 'component.'], function() {
@@ -36,5 +34,6 @@ Route::group(['middleware' => 'auth'], function() {
         })->name('accordion');
     });
 });
+
 
 require_once __DIR__ . "/auth.php";

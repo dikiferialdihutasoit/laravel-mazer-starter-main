@@ -31,7 +31,14 @@
 
     @vite(['resources/js/app.js'])
     {{-- <script src="assets/js/app.js" type="module"></script> --}}
+    
+    <script src="{{ asset('static/js/components/dark.js') }}"></script>
+    <script src="{{ asset('static/js/pages/horizontal-layout.js') }}"></script>
 
+    {{-- >> TAMBAHKAN SCRIPT CHART.JS DI SINI << --}}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    @stack('scripts')
 </body>
 
 </html>
