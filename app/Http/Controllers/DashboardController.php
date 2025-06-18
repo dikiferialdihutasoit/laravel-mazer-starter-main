@@ -19,28 +19,43 @@ class DashboardController extends Controller
     /**
      * Menyediakan data untuk grafik di dashboard dalam format JSON.
      */
-    public function getChartData()
+    public function getChartData(Request $request)
     {
-        // Ambil semua hasil survei
+        // Ambil tipe filter dari request, default-nya adalah 'monthly'
+        $filterType = $request->input('filter', 'monthly');
+
         $results = SurveyResult::orderBy('created_at')->get();
 
-        // Olah data untuk mendapatkan total skor per bulan
-        $monthlyTotals = $results->groupBy(function($item) {
-            // Kelompokkan data berdasarkan Bulan dan Tahun (misal: "Juni 2025")
-            return $item->created_at->format('F Y');
+        // Tentukan format tanggal berdasarkan tipe filter
+        $dateFormat = ($filterType === 'daily') ? 'Y-m-d' : 'Y-m';
+
+        $data = $results->groupBy(function($item) use ($dateFormat) {
+            // Kelompokkan data berdasarkan format tanggal yang dipilih
+            return $item->created_at->format($dateFormat);
         })->map(function ($group) {
-            // Untuk setiap grup (bulan), jumlahkan semua skornya
-            $totalScoreInMonth = 0;
+            // Untuk setiap grup (harian/bulanan), jumlahkan semua skornya
+            $totalScoreInGroup = 0;
             foreach($group as $result) {
-                $totalScoreInMonth += array_sum($result->scores);
+                $totalScoreInGroup += array_sum($result->scores);
             }
-            return $totalScoreInMonth;
+            return $totalScoreInGroup;
         });
         
+        // Urutkan berdasarkan kunci (tanggal) untuk memastikan urutan kronologis
+        $sortedData = $data->sortKeys();
+
+        // Format label agar lebih mudah dibaca di grafik
+        $labels = $sortedData->keys()->map(function($dateString) use ($filterType) {
+            if ($filterType === 'daily') {
+                return Carbon::createFromFormat('Y-m-d', $dateString)->format('d M Y'); // Format: 20 Jun 2025
+            }
+            return Carbon::createFromFormat('Y-m', $dateString)->format('F Y'); // Format: Juni 2025
+        });
+
         // Kirim data dalam format yang siap digunakan oleh Chart.js
         return response()->json([
-            'labels' => $monthlyTotals->keys(), // Nama-nama bulan (misal: ["Juni 2025", "Juli 2025"])
-            'data' => $monthlyTotals->values(),  // Total skor per bulan (misal: [150, 230])
+            'labels' => $labels,
+            'data' => $sortedData->values(),
         ]);
     }
 }

@@ -4,88 +4,67 @@ namespace App\Http\Controllers;
 
 use App\Models\SurveyResult;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 class SurveyController extends Controller
 {
-    /**
-     * Menampilkan halaman form survei.
-     */
     public function index()
     {
         return view('survey.form');
     }
 
-    /**
-     * Menampilkan semua hasil survei yang sudah disimpan.
-     */
-// app/Http/Controllers/SurveyController.php
+    public function showResults()
+    {
+        $allResults = SurveyResult::orderBy('created_at', 'desc')->get();
 
-// app/Http/Controllers/SurveyController.php
+        $groupedData = $allResults->groupBy(function($item) {
+            return $item->created_at->format('d F Y');
+        })->map(function ($dailySurveys) {
+            $dailyTotalScore = $dailySurveys->sum(function($survey) {
+                return array_sum($survey->scores);
+            });
 
-// app/Http/Controllers/SurveyController.php
+            return (object)[
+                'surveys'     => $dailySurveys,
+                'count'       => $dailySurveys->count(),
+                'total_score' => $dailyTotalScore,
+            ];
+        });
 
-public function showResults()
-{
-    // 1. Ambil semua data dari database
-    $allResults = SurveyResult::orderBy('created_at', 'desc')->get();
-
-    // 2. Hitung Grand Total dari semua data yang diambil
-    $grandTotal = 0;
-    foreach ($allResults as $result) {
-        // array_sum akan menjumlahkan semua angka di dalam array 'scores'
-        $grandTotal += array_sum($result->scores);
+        return view('survey.results', ['groupedData' => $groupedData]);
     }
 
-    // 3. Kelompokkan hasil berdasarkan tanggal untuk tampilan accordion
-    $groupedResults = $allResults->groupBy(function($item) {
-        return $item->created_at->format('d F Y');
-    });
-
-    // 4. Kirim SEMUA data yang dibutuhkan (groupedResults DAN grandTotal) ke view
-    return view('survey.results', [
-        'groupedResults' => $groupedResults,
-        'grandTotal' => $grandTotal
-    ]);
-}
     public function storeCategory(Request $request)
     {
-        // 1. Validasi data yang masuk
         $request->validate([
             'results' => 'required|array'
         ]);
 
-        $results = $request->input('results');
-        $files = $request->file('results');
+        $allFormData = $request->input('results');
+        $allFiles = $request->file('results');
 
-        // 2. Looping untuk setiap form yang dikirim
-        foreach ($results as $formId => $data) {
-            $imagePath = null;
-            // Proses upload gambar untuk form spesifik ini
-            if (isset($files[$formId]['image'])) {
-                $imagePath = $files[$formId]['image']->store('survey_images', 'public');
+        foreach ($allFormData as $formId => $formData) {
+            // Lompati jika entri tidak memiliki skor (data tidak lengkap)
+            if (!isset($formData['scores'])) {
+                continue;
             }
 
-            // 3. Simpan atau perbarui data ke database
+            $imagePath = null;
+            if (isset($allFiles[$formId]['image'])) {
+                $imagePath = $allFiles[$formId]['image']->store('survey_images', 'public');
+            }
+
+            // Gunakan 'form_id' yang dikirim dari form
             SurveyResult::updateOrCreate(
-                ['form_id' => $formId], // Kunci pencarian
+                ['form_id' => $formData['form_id']],
                 [
-                    // Data yang akan disimpan/diperbarui
-                    'scores' => $data['scores'],
-                    'notes' => $data['notes'] ?? null,
+                    'scores' => $formData['scores'],
+                    'notes' => $formData['notes'] ?? null,
                     'image_path' => $imagePath,
                 ]
             );
         }
 
-        // 4. Redirect kembali dengan pesan sukses
         return back()->with('success', 'Semua data survei berhasil disimpan!');
-    }
-
-    /**
-     * Menyimpan data dari SATU form (metode lama, bisa disimpan sebagai referensi atau dihapus).
-     */
-    public function store(Request $request)
-    {
-        // Dibiarkan kosong karena kita fokus pada storeCategory
     }
 }

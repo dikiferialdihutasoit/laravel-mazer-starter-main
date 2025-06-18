@@ -11,10 +11,13 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <h4 class="card-title">Rekapitulasi Total Skor Survei per Bulan</h4>
+                        <h4 class="card-title">Rekapitulasi Total Skor Audit</h4>
+                        <div class="btn-group mt-3" role="group">
+                            <button type="button" class="btn btn-outline-primary active" id="filter-monthly">Bulanan</button>
+                            <button type="button" class="btn btn-outline-primary" id="filter-daily">Harian</button>
+                        </div>
                     </div>
                     <div class="card-body">
-                        {{-- Ini adalah "kanvas" tempat grafik akan digambar --}}
                         <canvas id="surveyChart"></canvas>
                     </div>
                 </div>
@@ -22,35 +25,33 @@
         </section>
     </div>
 
-    {{-- 'scripts' ini akan di-push ke @stack('scripts') di layout utama --}}
     @push('scripts')
     <script>
-        // Pastikan script berjalan setelah semua elemen halaman dimuat
         document.addEventListener('DOMContentLoaded', function () {
             
-            // Ambil elemen canvas
             const ctx = document.getElementById('surveyChart').getContext('2d');
-            let myChart; // Deklarasikan variabel chart di luar agar bisa diakses
+            let myChart;
 
-            // Fungsi untuk mengambil data dari API dan merender grafik
-            function renderChart() {
-                // Ambil data dari route API yang sudah kita buat
-                fetch("{{ route('chart.data') }}")
+            const btnMonthly = document.getElementById('filter-monthly');
+            const btnDaily = document.getElementById('filter-daily');
+
+            function renderChart(filterType = 'monthly') {
+                const apiUrl = `{{ route('chart.data') }}?filter=${filterType}`;
+
+                fetch(apiUrl)
                     .then(response => response.json())
                     .then(data => {
-                        // Hancurkan chart lama jika ada, untuk mencegah duplikasi
                         if (myChart) {
                             myChart.destroy();
                         }
                         
-                        // Buat instansi grafik baru
                         myChart = new Chart(ctx, {
-                            type: 'bar', // Tipe grafik batang
+                            type: 'bar',
                             data: {
-                                labels: data.labels, // Label sumbu X (nama bulan) dari controller
+                                labels: data.labels,
                                 datasets: [{
-                                    label: 'Total Skor per Bulan',
-                                    data: data.data, // Data sumbu Y (total skor) dari controller
+                                    label: `Total Skor (${filterType === 'daily' ? 'Harian' : 'Bulanan'})`,
+                                    data: data.data,
                                     backgroundColor: 'rgba(75, 192, 192, 0.2)',
                                     borderColor: 'rgba(75, 192, 192, 1)',
                                     borderWidth: 1
@@ -68,8 +69,19 @@
                     .catch(error => console.error('Error fetching chart data:', error));
             }
 
-            // Panggil fungsi untuk pertama kali saat halaman dimuat
-            renderChart();
+            btnMonthly.addEventListener('click', function() {
+                this.classList.add('active');
+                btnDaily.classList.remove('active');
+                renderChart('monthly');
+            });
+
+            btnDaily.addEventListener('click', function() {
+                this.classList.add('active');
+                btnMonthly.classList.remove('active');
+                renderChart('daily');
+            });
+
+            renderChart('monthly');
         });
     </script>
     @endpush

@@ -2,7 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SurveyController;
-use App\Http\Controllers\DashboardController; // <-- PENYESUAIAN 1
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PdfController;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,8 +14,15 @@ use App\Http\Controllers\DashboardController; // <-- PENYESUAIAN 1
 Route::get('/', function () {
     return view('welcome');
 });
+    Route::group(['middleware' => 'auth'], function() {
+    // ... rute-rute yang sudah ada ...
+    Route::get('survey/results', [SurveyController::class, 'showResults'])->name('survey.results');
 
-Route::group(['middleware' => 'auth'], function() {
+    // >> TAMBAHKAN RUTE BARU UNTUK EXPORT PDF <<
+    Route::get('survey/export-pdf', [PdfController::class, 'exportSurveyResults'])->name('survey.export.pdf');
+    });
+    
+    Route::group(['middleware' => 'auth'], function() {
     
     // PENYESUAIAN 2: Arahkan rute dashboard ke controller
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
